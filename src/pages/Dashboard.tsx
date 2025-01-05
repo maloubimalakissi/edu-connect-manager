@@ -38,16 +38,21 @@ const Dashboard = () => {
 
   const handleDeleteTeacher = async (teacherId: string) => {
     try {
-      await deleteTeacher(teacherId);
-      queryClient.invalidateQueries({ queryKey: ['teachers'] });
+      console.log('Attempting to delete teacher:', teacherId);
+      const response = await deleteTeacher(teacherId);
+      console.log('Delete teacher response:', response);
+      
+      await queryClient.invalidateQueries({ queryKey: ['teachers'] });
+      
       toast({
         title: "Succès",
         description: "L'enseignant a été supprimé avec succès",
       });
     } catch (error) {
+      console.error('Error deleting teacher:', error);
       toast({
         title: "Erreur",
-        description: "Impossible de supprimer l'enseignant",
+        description: "Impossible de supprimer l'enseignant. Veuillez réessayer.",
         variant: "destructive",
       });
     }
