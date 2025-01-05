@@ -1,11 +1,13 @@
 import axios from 'axios';
 
-const BASE_URL = 'http://kahoot.nos-apps.com/api';
+const BASE_URL = 'https://kahoot.nos-apps.com/api';
 
 const api = axios.create({
   baseURL: BASE_URL,
   headers: {
     'Content-Type': 'application/json',
+    'Accept': 'application/json',
+    'Access-Control-Allow-Origin': '*'
   },
 });
 
@@ -18,8 +20,15 @@ api.interceptors.request.use((config) => {
 });
 
 export const login = async (email: string, password: string) => {
-  const response = await api.post('/login', { email, password });
-  return response.data;
+  console.log('Attempting login with:', { email });
+  try {
+    const response = await api.post('/login', { email, password });
+    console.log('Login response:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Login API error:', error);
+    throw error;
+  }
 };
 
 export const getMockTeachers = () => {
