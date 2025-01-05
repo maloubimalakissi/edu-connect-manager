@@ -23,7 +23,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const userStr = localStorage.getItem('user');
     if (token && userStr) {
       const userData = JSON.parse(userStr);
-      setUser(userData);
+      // Map the stored user data to match User type
+      setUser({
+        id: userData._id || userData.id, // Handle both _id and id
+        name: userData.name,
+        email: userData.email,
+        ecole: userData.ecole
+      });
     }
     setLoading(false);
   }, []);
@@ -33,8 +39,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setLoading(true);
       const response: LoginResponse = await login(email, password);
       localStorage.setItem('token', response.token);
-      localStorage.setItem('user', JSON.stringify(response.user));
-      setUser(response.user);
+      // Map API response to User type before storing
+      const userData: User = {
+        id: response.user._id,
+        name: response.user.name,
+        email: response.user.email,
+        ecole: response.user.ecole
+      };
+      localStorage.setItem('user', JSON.stringify(userData));
+      setUser(userData);
       toast.success('Connexion réussie');
       navigate('/dashboard');
     } catch (error) {

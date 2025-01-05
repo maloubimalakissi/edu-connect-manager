@@ -6,6 +6,7 @@ export interface LoginCredentials {
 export interface LoginResponse {
   token: string;
   user: {
+    _id: string;  // Changed from id to _id to match API response
     name: string;
     email: string;
     ecole: {
