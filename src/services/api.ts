@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { Student } from '@/types/auth';
+import type { Student, Teacher } from '@/types/auth';
 
 const BASE_URL = 'https://kahoot.nos-apps.com/api';
 
@@ -27,7 +27,43 @@ export const login = async (email: string, password: string) => {
     console.log('Login response:', response.data);
     return response.data;
   } catch (error) {
-    console.error('Login API error:', error);
+    console.error('Login error:', error);
+    throw error;
+  }
+};
+
+export const getTeachers = async () => {
+  console.log('Fetching teachers...');
+  try {
+    const response = await api.get('/users');
+    console.log('Teachers response:', response.data);
+    return response.data.data;
+  } catch (error) {
+    console.error('Get teachers error:', error);
+    throw error;
+  }
+};
+
+export const addTeacher = async (teacherData: Omit<Teacher, '_id' | 'date'>) => {
+  console.log('Adding teacher:', teacherData);
+  try {
+    const response = await api.post('/users', teacherData);
+    console.log('Add teacher response:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Add teacher error:', error);
+    throw error;
+  }
+};
+
+export const deleteTeacher = async (teacherId: string) => {
+  console.log('Deleting teacher:', teacherId);
+  try {
+    const response = await api.delete(`/users/delete/${teacherId}`);
+    console.log('Delete teacher response:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Delete teacher error:', error);
     throw error;
   }
 };
@@ -44,7 +80,7 @@ export const getStudents = async () => {
   }
 };
 
-export const addStudent = async (studentData: Omit<Student, '_id'>) => {
+export const addStudent = async (studentData: Omit<Student, '_id' | 'date'>) => {
   console.log('Adding student:', studentData);
   try {
     const response = await api.post('/apprenant', studentData);
@@ -66,12 +102,4 @@ export const deleteStudent = async (studentId: string) => {
     console.error('Delete student error:', error);
     throw error;
   }
-};
-
-export const getMockTeachers = () => {
-  return [
-    { id: '1', name: 'John Doe', subject: 'Mathematics', email: 'john@school.com' },
-    { id: '2', name: 'Jane Smith', subject: 'Physics', email: 'jane@school.com' },
-    { id: '3', name: 'Bob Wilson', subject: 'Chemistry', email: 'bob@school.com' },
-  ];
 };

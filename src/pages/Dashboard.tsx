@@ -13,23 +13,45 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { LogOut, Search, Users, GraduationCap, Trash2 } from "lucide-react";
-import { getMockTeachers, getStudents, deleteStudent } from '@/services/api';
+import { getTeachers, getStudents, deleteStudent, deleteTeacher } from '@/services/api';
 import { useToast } from "@/hooks/use-toast";
 import { AddStudentDialog } from '@/components/AddStudentDialog';
+import { AddTeacherDialog } from '@/components/AddTeacherDialog';
 import type { Teacher, Student } from '@/types/auth';
 
 const Dashboard = () => {
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [teacherSearch, setTeacherSearch] = useState('');
   const [studentSearch, setStudentSearch] = useState('');
 
-  const teachers = getMockTeachers();
+  const { data: teachers = [], isLoading: isLoadingTeachers } = useQuery({
+    queryKey: ['teachers'],
+    queryFn: getTeachers,
+  });
+
   const { data: students = [], isLoading: isLoadingStudents } = useQuery({
     queryKey: ['students'],
     queryFn: getStudents,
   });
+
+  const handleDeleteTeacher = async (teacherId: string) => {
+    try {
+      await deleteTeacher(teacherId);
+      queryClient.invalidateQueries({ queryKey: ['teachers'] });
+      toast({
+        title: "Succès",
+        description: "L'enseignant a été supprimé avec succès",
+      });
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: "Impossible de supprimer l'enseignant",
+        variant: "destructive",
+      });
+    }
+  };
 
   const handleDeleteStudent = async (studentId: string) => {
     try {
@@ -48,7 +70,7 @@ const Dashboard = () => {
     }
   };
 
-  const filteredTeachers = teachers.filter(teacher =>
+  const filteredTeachers = teachers.filter((teacher: Teacher) =>
     teacher.name.toLowerCase().includes(teacherSearch.toLowerCase()) ||
     teacher.email.toLowerCase().includes(teacherSearch.toLowerCase())
   );
@@ -58,7 +80,8 @@ const Dashboard = () => {
     student.email.toLowerCase().includes(studentSearch.toLowerCase())
   );
 
-  const refreshStudents = () => {
+  const refreshData = () => {
+    queryClient.invalidateQueries({ queryKey: ['teachers'] });
     queryClient.invalidateQueries({ queryKey: ['students'] });
   };
 
@@ -66,7 +89,16 @@ const Dashboard = () => {
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white shadow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-gray-900">École Manager</h1>
+          <div className="flex flex-col">
+            <h1 className="text-2xl font-bold text-gray-900">École Manager</h1>
+            {user && (
+              <div className="text-sm text-gray-600">
+                <p>{user.name}</p>
+                <p>{user.email}</p>
+                {user.ecole && <p className="text-gray-500">{user.ecole.libelle}</p>}
+              </div>
+            )}
+          </div>
           <Button variant="ghost" onClick={logout}>
             <LogOut className="h-4 w-4 mr-2" />
             Déconnexion
@@ -103,7 +135,10 @@ const Dashboard = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
           <Card>
             <CardHeader>
-              <CardTitle>Liste des enseignants</CardTitle>
+              <div className="flex justify-between items-center">
+                <CardTitle>Liste des enseignants</CardTitle>
+                <AddTeacherDialog onTeacherAdded={refreshData} />
+              </div>
               <div className="relative">
                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -119,18 +154,36 @@ const Dashboard = () => {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Nom</TableHead>
-                    <TableHead>Matière</TableHead>
                     <TableHead>Email</TableHead>
+                    <TableHead>Téléphone</TableHead>
+                    <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredTeachers.map((teacher: Teacher) => (
-                    <TableRow key={teacher.id}>
-                      <TableCell>{teacher.name}</TableCell>
-                      <TableCell>{teacher.subject}</TableCell>
-                      <TableCell>{teacher.email}</TableCell>
+                  {isLoadingTeachers ? (
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-center">
+                        Chargement...
+                      </TableCell>
                     </TableRow>
-                  ))}
+                  ) : (
+                    filteredTeachers.map((teacher: Teacher) => (
+                      <TableRow key={teacher._id}>
+                        <TableCell>{teacher.name}</TableCell>
+                        <TableCell>{teacher.email}</TableCell>
+                        <TableCell>{teacher.phone}</TableCell>
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDeleteTeacher(teacher._id)}
+                          >
+                            <Trash2 className="h-4 w-4 text-red-500" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
                 </TableBody>
               </Table>
             </CardContent>
@@ -140,7 +193,7 @@ const Dashboard = () => {
             <CardHeader>
               <div className="flex justify-between items-center">
                 <CardTitle>Liste des apprenants</CardTitle>
-                <AddStudentDialog onStudentAdded={refreshStudents} />
+                <AddStudentDialog onStudentAdded={refreshData} />
               </div>
               <div className="relative">
                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />

@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { login } from '@/services/api';
-import type { User } from '@/types/auth';
+import type { User, LoginResponse } from '@/types/auth';
 
 interface AuthContextType {
   user: User | null;
@@ -20,13 +20,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     const token = localStorage.getItem('token');
-    if (token) {
-      // For demo purposes, we'll create a mock user
-      setUser({
-        id: '1',
-        name: 'Admin User',
-        email: 'admin@school.com',
-      });
+    const userStr = localStorage.getItem('user');
+    if (token && userStr) {
+      const userData = JSON.parse(userStr);
+      setUser(userData);
     }
     setLoading(false);
   }, []);
@@ -34,13 +31,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const handleLogin = async (email: string, password: string) => {
     try {
       setLoading(true);
-      const response = await login(email, password);
+      const response: LoginResponse = await login(email, password);
       localStorage.setItem('token', response.token);
-      setUser({
-        id: '1',
-        name: 'Admin User',
-        email: email,
-      });
+      localStorage.setItem('user', JSON.stringify(response.user));
+      setUser(response.user);
       toast.success('Connexion réussie');
       navigate('/dashboard');
     } catch (error) {
@@ -53,6 +47,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const handleLogout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('user');
     setUser(null);
     navigate('/');
     toast.success('Déconnexion réussie');

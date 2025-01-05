@@ -5,19 +5,32 @@ export interface LoginCredentials {
 
 export interface LoginResponse {
   token: string;
+  user: {
+    name: string;
+    email: string;
+    ecole: {
+      libelle: string;
+    }
+  }
 }
 
 export interface User {
   id: string;
   name: string;
   email: string;
+  ecole?: {
+    libelle: string;
+  }
 }
 
 export interface Teacher {
-  id: string;
+  _id: string;
   name: string;
-  subject: string;
   email: string;
+  phone: string;
+  statut: string;
+  ecole: string;
+  date: string;
 }
 
 export interface School {
