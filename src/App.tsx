@@ -15,11 +15,11 @@ const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
 };
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
+  <BrowserRouter>
     <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
+      <QueryClientProvider client={queryClient}>
+        <Toaster />
+        <Sonner />
         <AuthProvider>
           <Routes>
             <Route path="/" element={<Login />} />
@@ -33,9 +33,9 @@ const App = () => (
             />
           </Routes>
         </AuthProvider>
-      </BrowserRouter>
+      </QueryClientProvider>
     </TooltipProvider>
-  </QueryClientProvider>
+  </BrowserRouter>
 );
 
 export default App;
