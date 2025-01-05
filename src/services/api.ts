@@ -1,4 +1,5 @@
 import axios from 'axios';
+import type { Student } from '@/types/auth';
 
 const BASE_URL = 'https://kahoot.nos-apps.com/api';
 
@@ -31,6 +32,42 @@ export const login = async (email: string, password: string) => {
   }
 };
 
+export const getStudents = async () => {
+  console.log('Fetching students...');
+  try {
+    const response = await api.get('/apprenant');
+    console.log('Students response:', response.data);
+    return response.data.data;
+  } catch (error) {
+    console.error('Get students error:', error);
+    throw error;
+  }
+};
+
+export const addStudent = async (studentData: Omit<Student, '_id'>) => {
+  console.log('Adding student:', studentData);
+  try {
+    const response = await api.post('/apprenant', studentData);
+    console.log('Add student response:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Add student error:', error);
+    throw error;
+  }
+};
+
+export const deleteStudent = async (studentId: string) => {
+  console.log('Deleting student:', studentId);
+  try {
+    const response = await api.delete(`/apprenant/delete/${studentId}`);
+    console.log('Delete student response:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Delete student error:', error);
+    throw error;
+  }
+};
+
 export const getMockTeachers = () => {
   return [
     { id: '1', name: 'John Doe', subject: 'Mathematics', email: 'john@school.com' },
@@ -38,13 +75,3 @@ export const getMockTeachers = () => {
     { id: '3', name: 'Bob Wilson', subject: 'Chemistry', email: 'bob@school.com' },
   ];
 };
-
-export const getMockStudents = () => {
-  return [
-    { id: '1', name: 'Alice Johnson', grade: '10th', email: 'alice@school.com' },
-    { id: '2', name: 'Charlie Brown', grade: '11th', email: 'charlie@school.com' },
-    { id: '3', name: 'Diana Evans', grade: '12th', email: 'diana@school.com' },
-  ];
-};
-
-export default api;

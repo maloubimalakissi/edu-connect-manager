@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,27 +12,55 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { LogOut, Search, Users, GraduationCap } from "lucide-react";
-import { getMockTeachers, getMockStudents } from '@/services/api';
+import { LogOut, Search, Users, GraduationCap, Trash2 } from "lucide-react";
+import { getMockTeachers, getStudents, deleteStudent } from '@/services/api';
+import { useToast } from "@/hooks/use-toast";
+import { AddStudentDialog } from '@/components/AddStudentDialog';
 import type { Teacher, Student } from '@/types/auth';
 
 const Dashboard = () => {
   const { logout } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [teacherSearch, setTeacherSearch] = useState('');
   const [studentSearch, setStudentSearch] = useState('');
 
   const teachers = getMockTeachers();
-  const students = getMockStudents();
+  const { data: students = [], isLoading: isLoadingStudents } = useQuery({
+    queryKey: ['students'],
+    queryFn: getStudents,
+  });
+
+  const handleDeleteStudent = async (studentId: string) => {
+    try {
+      await deleteStudent(studentId);
+      queryClient.invalidateQueries({ queryKey: ['students'] });
+      toast({
+        title: "Succès",
+        description: "L'apprenant a été supprimé avec succès",
+      });
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: "Impossible de supprimer l'apprenant",
+        variant: "destructive",
+      });
+    }
+  };
 
   const filteredTeachers = teachers.filter(teacher =>
     teacher.name.toLowerCase().includes(teacherSearch.toLowerCase()) ||
     teacher.email.toLowerCase().includes(teacherSearch.toLowerCase())
   );
 
-  const filteredStudents = students.filter(student =>
-    student.name.toLowerCase().includes(studentSearch.toLowerCase()) ||
+  const filteredStudents = students.filter((student: Student) =>
+    student.nom.toLowerCase().includes(studentSearch.toLowerCase()) ||
     student.email.toLowerCase().includes(studentSearch.toLowerCase())
   );
+
+  const refreshStudents = () => {
+    queryClient.invalidateQueries({ queryKey: ['students'] });
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -47,7 +76,6 @@ const Dashboard = () => {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/* Statistiques */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium">
@@ -73,7 +101,6 @@ const Dashboard = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
-          {/* Table des enseignants */}
           <Card>
             <CardHeader>
               <CardTitle>Liste des enseignants</CardTitle>
@@ -109,10 +136,12 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
-          {/* Table des apprenants */}
           <Card>
             <CardHeader>
-              <CardTitle>Liste des apprenants</CardTitle>
+              <div className="flex justify-between items-center">
+                <CardTitle>Liste des apprenants</CardTitle>
+                <AddStudentDialog onStudentAdded={refreshStudents} />
+              </div>
               <div className="relative">
                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -128,18 +157,36 @@ const Dashboard = () => {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Nom</TableHead>
-                    <TableHead>Niveau</TableHead>
+                    <TableHead>Prénom</TableHead>
                     <TableHead>Email</TableHead>
+                    <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredStudents.map((student: Student) => (
-                    <TableRow key={student.id}>
-                      <TableCell>{student.name}</TableCell>
-                      <TableCell>{student.grade}</TableCell>
-                      <TableCell>{student.email}</TableCell>
+                  {isLoadingStudents ? (
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-center">
+                        Chargement...
+                      </TableCell>
                     </TableRow>
-                  ))}
+                  ) : (
+                    filteredStudents.map((student: Student) => (
+                      <TableRow key={student._id}>
+                        <TableCell>{student.nom}</TableCell>
+                        <TableCell>{student.prenom}</TableCell>
+                        <TableCell>{student.email}</TableCell>
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDeleteStudent(student._id)}
+                          >
+                            <Trash2 className="h-4 w-4 text-red-500" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
                 </TableBody>
               </Table>
             </CardContent>

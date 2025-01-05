@@ -20,9 +20,21 @@ export interface Teacher {
   email: string;
 }
 
+export interface School {
+  _id: string;
+  libelle: string;
+  ville: string;
+  telephone: string;
+}
+
 export interface Student {
-  id: string;
-  name: string;
-  grade: string;
+  _id: string;
+  nom: string;
+  prenom: string;
+  avatar: string;
+  matricule: string;
+  phone: string;
   email: string;
+  ecole: School;
+  date: string;
 }
